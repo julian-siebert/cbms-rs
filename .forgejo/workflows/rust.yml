@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: msrd0/rust-toolchain@stable
+        uses: siebert/rust-toolchain@stable
         with:
           components: clippy, rustfmt
 
@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: msrd0/rust-toolchain@stable
+        uses: siebert/rust-toolchain@stable
 
       - name: Publish to crates.io
         env:
