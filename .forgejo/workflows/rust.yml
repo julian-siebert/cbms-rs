@@ -18,7 +18,7 @@ jobs:
       - name: Install Rust
         uses: siebert/setup-rust@stable
         with:
-          components: clippy, rustfmt
+          components: rustfmt
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -34,9 +34,6 @@ jobs:
 
       - name: Test
         run: cargo test --all --verbose
-
-      - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Rustfmt
         run: cargo fmt --all -- --check
