@@ -9,7 +9,7 @@ on:
 
 jobs:
   test-lint:
-    runs-on: ubuntu-latest
+    runs-on: codeberg-medium
 
     steps:
       - name: Checkout
@@ -46,7 +46,7 @@ jobs:
 
   publish:
     needs: test-lint
-    runs-on: ubuntu-latest
+    runs-on: codeberg-medium
     if: startsWith(gitea.ref, 'refs/tags/v')
 
     steps:
