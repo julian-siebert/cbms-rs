@@ -1,0 +1,24 @@
+[package]
+name = "cbms"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "CBOR-based Message Stream (CBMS) Rust implementation"
+readme = "README.md"
+
+[dependencies]
+serde.workspace = true
+ciborium.workspace = true
+thiserror.workspace = true
+rand.workspace = true
+bytes.workspace = true
+async-trait = { version = "0.1.89", optional = true }
+tokio = { version = "1.48.0", features = [], optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[features]
+default = []
+async = ["dep:tokio", "dep:async-trait"]

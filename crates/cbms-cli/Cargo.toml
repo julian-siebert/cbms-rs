@@ -1,0 +1,21 @@
+[package]
+name = "cbms-cli"
+publish = false
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "CBOR-based Message Stream (CBMS) CLI"
+
+[dependencies]
+cbms = { path = "../cbms", features = ["async"] }
+ciborium.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+tokio = { version = "1.48.0", features = ["full"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

@@ -1,5 +1,10 @@
+use std::io::Cursor;
+
 use bytes::{Buf, BufMut, BytesMut};
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader};
+use ciborium::from_reader;
+use tokio::io::{
+    AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader, Stdin, Stdout, stdin, stdout,
+};
 
 use crate::{Error, Message};
 
@@ -39,9 +44,9 @@ impl CborDecoder {
             return Ok(None);
         }
 
-        let cursor = std::io::Cursor::new(&self.buffer[..]);
+        let cursor = Cursor::new(&self.buffer[..]);
 
-        match ciborium::from_reader::<Message, std::io::Cursor<&[u8]>>(cursor) {
+        match from_reader::<Message, Cursor<&[u8]>>(cursor) {
             Ok(msg) => {
                 let encoded = msg.to_cbor()?;
                 let consumed = encoded.len();
@@ -96,11 +101,11 @@ impl CborDecoder {
     }
 }
 
-pub type StdioTransport = StreamTransport<tokio::io::Stdin, tokio::io::Stdout>;
+pub type StdioTransport = StreamTransport<Stdin, Stdout>;
 
 impl StdioTransport {
     pub fn stdio() -> Self {
-        StreamTransport::new(tokio::io::stdin(), tokio::io::stdout())
+        StreamTransport::new(stdin(), stdout())
     }
 }
 
@@ -161,7 +166,7 @@ where
 pub mod unix {
     use super::*;
     use std::path::Path;
-    use tokio::net::{UnixDatagram, UnixStream};
+    use tokio::net::{UnixDatagram, UnixStream, unix::UCred};
 
     pub struct UnixStreamTransport {
         stream: UnixStream,
@@ -181,7 +186,7 @@ pub mod unix {
             Ok(Self::new(stream))
         }
 
-        pub fn peer_cred(&self) -> Result<tokio::net::unix::UCred, Error> {
+        pub fn peer_cred(&self) -> Result<UCred, Error> {
             Ok(self.stream.peer_cred()?)
         }
     }

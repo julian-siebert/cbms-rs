@@ -1,9 +1,14 @@
-use std::{collections::HashMap, fmt, str};
+use std::{
+    collections::HashMap,
+    fmt::{self, Formatter},
+    str,
+};
 
-use ciborium::cbor;
+use ciborium::{Value, cbor, from_reader, into_writer};
 use serde::{Deserialize, Serialize};
 
 pub mod transport;
+#[cfg(feature = "async")]
 pub mod transport_async;
 
 pub const PROTOCOL_VERSION: u8 = 1;
@@ -30,7 +35,7 @@ impl Default for MessageId {
 }
 
 impl fmt::Display for MessageId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:032x}", &self.0)
     }
 }
@@ -153,7 +158,7 @@ impl<'de> Deserialize<'de> for StatusCode {
     }
 }
 
-pub type Metadata = HashMap<String, ciborium::Value>;
+pub type Metadata = HashMap<String, Value>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
@@ -176,14 +181,14 @@ pub struct Message {
     pub meta: Option<Metadata>,
 
     #[serde(rename = "payload", skip_serializing_if = "Option::is_none")]
-    pub payload: Option<ciborium::Value>,
+    pub payload: Option<Value>,
 
     #[serde(rename = "ref", skip_serializing_if = "Option::is_none")]
     pub reference: Option<MessageId>,
 }
 
 impl Message {
-    pub fn new_request(method: impl Into<String>, payload: Option<ciborium::Value>) -> Self {
+    pub fn new_request(method: impl Into<String>, payload: Option<Value>) -> Self {
         Message {
             version: PROTOCOL_VERSION,
             id: MessageId::new(),
@@ -196,11 +201,7 @@ impl Message {
         }
     }
 
-    pub fn new_response(
-        request_id: MessageId,
-        status: StatusCode,
-        payload: Option<ciborium::Value>,
-    ) -> Self {
+    pub fn new_response(request_id: MessageId, status: StatusCode, payload: Option<Value>) -> Self {
         Message {
             version: PROTOCOL_VERSION,
             id: MessageId::new(),
@@ -213,7 +214,7 @@ impl Message {
         }
     }
 
-    pub fn success(request_id: MessageId, payload: Option<ciborium::Value>) -> Self {
+    pub fn success(request_id: MessageId, payload: Option<Value>) -> Self {
         Self::new_response(request_id, StatusCode::Success, payload)
     }
 
@@ -222,7 +223,7 @@ impl Message {
         Self::new_response(request_id, status, payload)
     }
 
-    pub fn new_push(method: impl Into<String>, payload: Option<ciborium::Value>) -> Self {
+    pub fn new_push(method: impl Into<String>, payload: Option<Value>) -> Self {
         Message {
             version: PROTOCOL_VERSION,
             id: MessageId::new(),
@@ -237,7 +238,7 @@ impl Message {
 
     pub fn new_stream(
         stream_id: MessageId,
-        payload: Option<ciborium::Value>,
+        payload: Option<Value>,
         status: Option<StatusCode>,
     ) -> Self {
         Message {
@@ -252,7 +253,7 @@ impl Message {
         }
     }
 
-    pub fn with_meta(mut self, key: impl Into<String>, value: ciborium::Value) -> Self {
+    pub fn with_meta(mut self, key: impl Into<String>, value: Value) -> Self {
         self.meta
             .get_or_insert_with(HashMap::new)
             .insert(key.into(), value);
@@ -350,16 +351,16 @@ impl Message {
 
     pub fn to_cbor(&self) -> Result<Vec<u8>, Error> {
         let mut buffer = Vec::new();
-        ciborium::into_writer(self, &mut buffer)?;
+        into_writer(self, &mut buffer)?;
         Ok(buffer)
     }
 
     pub fn from_cbor(bytes: &[u8]) -> Result<Self, Error> {
-        Ok(ciborium::from_reader(bytes)?)
+        Ok(from_reader(bytes)?)
     }
 }
 
-fn validate_value(value: &ciborium::Value) -> Result<(), Error> {
+fn validate_value(value: &Value) -> Result<(), Error> {
     const MAX_DEPTH: usize = 64;
     const MAX_ENTRIES: usize = 1024;
     /// 16 MB
@@ -367,7 +368,7 @@ fn validate_value(value: &ciborium::Value) -> Result<(), Error> {
     /// 16 MB
     const MAX_BYTES_LENGTH: usize = 16 * 1024 * 1024;
 
-    fn validate_inner(value: &ciborium::Value, depth: usize, path: &str) -> Result<(), Error> {
+    fn validate_inner(value: &Value, depth: usize, path: &str) -> Result<(), Error> {
         if depth > MAX_DEPTH {
             return Err(Error::InvalidMessage(format!(
                 "CBOR nesting too deep at '{}': depth {} (max {})",
@@ -376,7 +377,7 @@ fn validate_value(value: &ciborium::Value) -> Result<(), Error> {
         }
 
         match value {
-            ciborium::Value::Array(items) => {
+            Value::Array(items) => {
                 let len = items.len();
                 if len > MAX_ENTRIES {
                     return Err(Error::InvalidMessage(format!(
@@ -392,7 +393,7 @@ fn validate_value(value: &ciborium::Value) -> Result<(), Error> {
 
                 Ok(())
             }
-            ciborium::Value::Map(map) => {
+            Value::Map(map) => {
                 let len = map.len();
                 if len > MAX_ENTRIES {
                     return Err(Error::InvalidMessage(format!(
@@ -403,8 +404,8 @@ fn validate_value(value: &ciborium::Value) -> Result<(), Error> {
 
                 for (key, map_val) in map {
                     let key_str = match key {
-                        ciborium::Value::Text(text_string) => text_string.clone(),
-                        ciborium::Value::Integer(integer) => format!("{:?}", integer),
+                        Value::Text(text_string) => text_string.clone(),
+                        Value::Integer(integer) => format!("{:?}", integer),
                         _ => "<invalid key>".into(),
                     };
 
@@ -415,7 +416,7 @@ fn validate_value(value: &ciborium::Value) -> Result<(), Error> {
                     };
 
                     match key {
-                        ciborium::Value::Text(_) | ciborium::Value::Integer(_) => {}
+                        Value::Text(_) | Value::Integer(_) => {}
                         _ => {
                             return Err(Error::InvalidMessage(
                                 "CBOR map keys must be Text or Integer".into(),
@@ -427,12 +428,9 @@ fn validate_value(value: &ciborium::Value) -> Result<(), Error> {
 
                 Ok(())
             }
-            ciborium::Value::Tag(_, tag_value) => validate_inner(tag_value, depth + 1, path),
-            ciborium::Value::Integer(_)
-            | ciborium::Value::Float(_)
-            | ciborium::Value::Bool(_)
-            | ciborium::Value::Null => Ok(()),
-            ciborium::Value::Text(text_string) => {
+            Value::Tag(_, tag_value) => validate_inner(tag_value, depth + 1, path),
+            Value::Integer(_) | Value::Float(_) | Value::Bool(_) | Value::Null => Ok(()),
+            Value::Text(text_string) => {
                 let len = text_string.len();
                 if len > MAX_TEXT_LENGTH {
                     return Err(Error::InvalidMessage(format!(
@@ -442,7 +440,7 @@ fn validate_value(value: &ciborium::Value) -> Result<(), Error> {
                 }
                 Ok(())
             }
-            ciborium::Value::Bytes(bytes) => {
+            Value::Bytes(bytes) => {
                 let len = bytes.len();
                 if len > MAX_BYTES_LENGTH {
                     return Err(Error::InvalidMessage(format!(
@@ -468,7 +466,7 @@ pub struct ErrorPayload {
     pub message: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub details: Option<ciborium::Value>,
+    pub details: Option<Value>,
 }
 
 impl ErrorPayload {
@@ -480,7 +478,7 @@ impl ErrorPayload {
         }
     }
 
-    pub fn with_details(mut self, details: ciborium::Value) -> Self {
+    pub fn with_details(mut self, details: Value) -> Self {
         self.details = Some(details);
         self
     }
@@ -518,13 +516,13 @@ impl ErrorPayload {
         }
     }
 
-    pub fn to_value(&self) -> Result<ciborium::Value, Error> {
+    pub fn to_value(&self) -> Result<Value, Error> {
         Ok(cbor!(&self)?)
     }
 }
 
 impl fmt::Display for ErrorPayload {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "[{}] {}", self.code, self.message)
     }
 }

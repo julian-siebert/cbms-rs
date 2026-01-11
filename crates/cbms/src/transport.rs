@@ -1,4 +1,4 @@
-use std::io::{BufReader, Read, Write};
+use std::io::{BufReader, Read, Stdin, Stdout, Write, stdin, stdout};
 
 use crate::{Error, Message};
 
@@ -17,11 +17,11 @@ pub trait Transport {
     }
 }
 
-pub type StdioTransport = StreamTransport<std::io::Stdin, std::io::Stdout>;
+pub type StdioTransport = StreamTransport<Stdin, Stdout>;
 
 impl StdioTransport {
     pub fn stdio() -> Self {
-        StreamTransport::new(std::io::stdin(), std::io::stdout())
+        StreamTransport::new(stdin(), stdout())
     }
 }
 
