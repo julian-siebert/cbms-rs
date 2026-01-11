@@ -89,16 +89,16 @@ impl StatusCode {
     }
 
     pub fn is_signal(&self) -> bool {
-        match self {
+        matches!(
+            self,
             Self::Interrupt
-            | Self::Quit
-            | Self::Illegal
-            | Self::Abort
-            | Self::Kill
-            | Self::SegFault
-            | Self::Terminate => true,
-            _ => false,
-        }
+                | Self::Quit
+                | Self::Illegal
+                | Self::Abort
+                | Self::Kill
+                | Self::SegFault
+                | Self::Terminate
+        )
     }
 
     pub fn as_u8(&self) -> u8 {

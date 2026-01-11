@@ -44,7 +44,7 @@ jobs:
   publish:
     needs: test-lint
     runs-on: codeberg-medium
-    if: startsWith(gitea.ref, 'refs/tags/v')
+    if: startsWith(forgejo.ref, 'refs/tags/v')
 
     steps:
       - name: Checkout
