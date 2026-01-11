@@ -50,6 +50,12 @@ jobs:
       - name: Install Rust
         uses: siebert/setup-rust@stable
 
+      - name: Set version from tag
+        run: |
+          TAG_VERSION=${forgejo.ref#refs/tags/v}
+          echo "Setting version to $TAG_VERSION in Cargo.toml"
+          sed -i "s/^version = \".*\"/version = \"$TAG_VERSION\"/" Cargo.toml
+
       - name: Publish to crates.io
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
