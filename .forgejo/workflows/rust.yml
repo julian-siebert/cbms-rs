@@ -52,8 +52,10 @@ jobs:
 
       - name: Set version from tag
         run: |
-          TAG_VERSION=${forgejo.ref#refs/tags/v}
+          TAG_REF="${forgejo.ref}"
+          TAG_VERSION=$(echo "$TAG_REF" | sed 's|refs/tags/v||')
           echo "Setting version to $TAG_VERSION in Cargo.toml"
+
           sed -i "s/^version = \".*\"/version = \"$TAG_VERSION\"/" Cargo.toml
 
       - name: Publish to crates.io
