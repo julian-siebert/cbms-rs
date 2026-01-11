@@ -5,7 +5,7 @@ edition.workspace = true
 repository.workspace = true
 license.workspace = true
 description = "CBOR-based Message Stream (CBMS) Rust implementation"
-readme = "README.md"
+readme = "../../README.md"
 
 [dependencies]
 serde.workspace = true
