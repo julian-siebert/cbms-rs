@@ -1,0 +1,16 @@
+[package]
+name = "cbms-sql"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "CBOR-based Message Stream (CBMS) SQL adapter"
+readme = "../../README.md"
+
+[dependencies]
+cbms = { path = "../cbms", features = ["async"] }
+serde.workspace = true
+ciborium.workspace = true
+thiserror.workspace = true
+tokio = { version = "1.48.0", features = [] }
+sqlx = { version = "0.8", features = ["mysql"] }

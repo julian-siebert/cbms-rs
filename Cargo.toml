@@ -2,7 +2,8 @@
 resolver = "3"
 members = [
     "crates/cbms",
-    "crates/cbms-cli"
+    "crates/cbms-cli",
+    "crates/cbms-sql"
 ]
 
 [workspace.package]

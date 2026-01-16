@@ -6,7 +6,10 @@ use std::{
 
 use ciborium::{Value, cbor, from_reader, into_writer};
 use serde::{Deserialize, Serialize};
+use tokio::runtime::TryCurrentError;
 
+#[cfg(feature = "quic")]
+pub mod quic;
 pub mod transport;
 #[cfg(feature = "async")]
 pub mod transport_async;
@@ -555,6 +558,12 @@ pub enum Error {
 
     #[error("Hashing failed: {0}")]
     HashError(String),
+
+    #[error("Tokio try current error: {0}")]
+    TryCurrent(#[from] TryCurrentError),
+
+    #[error("External error: {0}")]
+    External(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
 impl std::error::Error for ErrorPayload {}

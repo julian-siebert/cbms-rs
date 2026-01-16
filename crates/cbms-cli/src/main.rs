@@ -38,6 +38,9 @@ enum Commands {
     Exec {
         command: String,
     },
+    Tunnel {
+        remote: Option<String>,
+    },
 }
 
 #[tokio::main]
@@ -58,6 +61,7 @@ async fn main() {
             output_file,
         } => decode_cmd(input, input_file, output_file).await,
         Commands::Exec { command } => exec_cmd(command).await,
+        Commands::Tunnel {} => todo!(),
     };
 }
 

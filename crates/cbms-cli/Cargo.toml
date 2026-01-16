@@ -8,7 +8,8 @@ license.workspace = true
 description = "CBOR-based Message Stream (CBMS) CLI"
 
 [dependencies]
-cbms = { path = "../cbms", features = ["async"] }
+cbms = { path = "../cbms", features = ["async", "quic"] }
+cbms-quic = { path = "../cbms-quic" }
 ciborium.workspace = true
 serde_json.workspace = true
 clap.workspace = true
