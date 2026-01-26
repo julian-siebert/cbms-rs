@@ -10,6 +10,8 @@ use tokio::runtime::TryCurrentError;
 
 #[cfg(feature = "quic")]
 pub mod quic;
+#[cfg(feature = "sql")]
+pub mod sql;
 pub mod transport;
 #[cfg(feature = "async")]
 pub mod transport_async;
@@ -180,6 +182,9 @@ pub struct Message {
     #[serde(rename = "method", skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
 
+    #[serde(rename = "path", skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+
     #[serde(rename = "meta", skip_serializing_if = "Option::is_none")]
     pub meta: Option<Metadata>,
 
@@ -191,13 +196,18 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn new_request(method: impl Into<String>, payload: Option<Value>) -> Self {
+    pub fn new_request(
+        method: impl Into<String>,
+        path: impl Into<String>,
+        payload: Option<Value>,
+    ) -> Self {
         Message {
             version: PROTOCOL_VERSION,
             id: MessageId::new(),
             msg_type: MessageType::Req,
             status: None,
             method: Some(method.into()),
+            path: Some(path.into()),
             meta: None,
             payload,
             reference: None,
@@ -211,28 +221,49 @@ impl Message {
             msg_type: MessageType::Res,
             status: Some(status),
             method: None,
+            path: None,
             meta: None,
             payload,
             reference: Some(request_id),
         }
     }
 
-    pub fn success(request_id: MessageId, payload: Option<Value>) -> Self {
+    pub fn success_response(request_id: MessageId, payload: Option<Value>) -> Self {
         Self::new_response(request_id, StatusCode::Success, payload)
     }
 
-    pub fn error(request_id: MessageId, status: StatusCode, error: ErrorPayload) -> Self {
+    pub fn error_response(request_id: MessageId, status: StatusCode, error: ErrorPayload) -> Self {
         let payload = error.to_value().ok();
         Self::new_response(request_id, status, payload)
     }
 
-    pub fn new_push(method: impl Into<String>, payload: Option<Value>) -> Self {
+    pub fn error_push(status: StatusCode, error: ErrorPayload) -> Self {
+        let payload = error.to_value().ok();
+        Message {
+            version: PROTOCOL_VERSION,
+            id: MessageId::new(),
+            msg_type: MessageType::Push,
+            status: Some(status),
+            method: None,
+            path: None,
+            meta: None,
+            payload,
+            reference: None,
+        }
+    }
+
+    pub fn new_push(
+        method: impl Into<String>,
+        path: impl Into<String>,
+        payload: Option<Value>,
+    ) -> Self {
         Message {
             version: PROTOCOL_VERSION,
             id: MessageId::new(),
             msg_type: MessageType::Push,
             status: None,
             method: Some(method.into()),
+            path: Some(path.into()),
             meta: None,
             payload,
             reference: None,
@@ -250,6 +281,7 @@ impl Message {
             msg_type: MessageType::Stream,
             status,
             method: None,
+            path: None,
             meta: None,
             payload,
             reference: Some(stream_id),

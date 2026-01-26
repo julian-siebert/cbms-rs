@@ -142,6 +142,7 @@ dependencies = [
  "quinn",
  "rand 0.9.2",
  "serde",
+ "sqlx",
  "thiserror 2.0.17",
  "tokio",
  "tokio-test",
@@ -152,33 +153,9 @@ name = "cbms-cli"
 version = "0.0.0"
 dependencies = [
  "cbms",
- "cbms-quic",
  "ciborium",
  "clap",
  "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "cbms-quic"
-version = "0.0.0"
-dependencies = [
- "async-trait",
- "cbms",
- "quinn",
- "tokio",
- "tokio-test",
-]
-
-[[package]]
-name = "cbms-sql"
-version = "0.0.0"
-dependencies = [
- "cbms",
- "ciborium",
- "serde",
- "sqlx",
- "thiserror 2.0.17",
  "tokio",
 ]
 

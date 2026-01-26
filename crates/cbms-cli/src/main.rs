@@ -61,7 +61,7 @@ async fn main() {
             output_file,
         } => decode_cmd(input, input_file, output_file).await,
         Commands::Exec { command } => exec_cmd(command).await,
-        Commands::Tunnel {} => todo!(),
+        Commands::Tunnel { remote } => todo!(),
     };
 }
 
@@ -76,7 +76,7 @@ fn panic_hook(info: &PanicHookInfo) {
         "panic occured".to_string()
     };
 
-    let error_message = Message::error(
+    let error_message = Message::error_response(
         MessageId::new(),
         PANIC_STATUS_CODE,
         ErrorPayload::new(PANIC_STATUS_CODE.as_u8().to_string(), msg.clone()),
@@ -271,7 +271,7 @@ async fn exec_cmd(command: String) {
 
         while let Ok(msg) = msg_rx.recv() {
             if let Err(e) = transport.send(&msg) {
-                let error_msg = Message::error(
+                let error_msg = Message::error_response(
                     MessageId::new(),
                     StatusCode::Protocol,
                     ErrorPayload::new(
@@ -312,7 +312,7 @@ async fn exec_cmd(command: String) {
 
                     if !is_eof {
                         // Nur bei echten Fehlern eine Error-Message senden
-                        let error_msg = Message::error(
+                        let error_msg = Message::error_response(
                             MessageId::new(),
                             StatusCode::Protocol,
                             ErrorPayload::new(

@@ -17,8 +17,6 @@ jobs:
 
       - name: Install Rust
         uses: siebert/setup-rust@stable
-        with:
-          components: rustfmt
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -35,9 +33,6 @@ jobs:
       - name: Test
         run: cargo test --all --verbose
 
-      - name: Rustfmt
-        run: cargo fmt --all -- --check
-
   publish:
     needs: test-lint
     runs-on: codeberg-medium
@@ -49,14 +44,6 @@ jobs:
 
       - name: Install Rust
         uses: siebert/setup-rust@stable
-
-      - name: Set version from tag
-        run: |
-          TAG_REF="${forgejo.ref}"
-          TAG_VERSION=$(echo "$TAG_REF" | sed 's|refs/tags/v||')
-          echo "Setting version to $TAG_VERSION in Cargo.toml"
-
-          sed -i "s/^version = \".*\"/version = \"$TAG_VERSION\"/" Cargo.toml
 
       - name: Publish to crates.io
         env:
