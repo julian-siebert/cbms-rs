@@ -34,7 +34,7 @@ jobs:
 
   bump-and-publish:
     runs-on: codeberg-medium
-    if: forgejo.ref = 'refs/heads/main'
+    if: forgejo.ref == 'refs/heads/main'
     name: Cargo bump patch and publish
     steps:
       - name: Checkout
