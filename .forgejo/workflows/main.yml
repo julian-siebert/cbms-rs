@@ -1,14 +1,13 @@
-name: Rust CI
+name: Main Branch CI
 
 on:
   push:
-    branches: [main]
-    tags:
-      - "v*"
-  pull_request:
+    branches:
+      - main
 
 jobs:
   test-lint:
+    name: "Cargo build, test"
     runs-on: codeberg-medium
 
     steps:
@@ -33,17 +32,33 @@ jobs:
       - name: Test
         run: cargo test --all --verbose
 
-  publish:
-    needs: test-lint
+  bump-and-publish:
     runs-on: codeberg-medium
-    if: startsWith(forgejo.ref, 'refs/tags/v')
-
+    if: forgejo.ref = 'refs/heads/main'
+    name: Cargo bump patch and publish
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.FORGEJO_TOKEN }}
 
       - name: Install Rust
         uses: siebert/setup-rust@stable
+
+      - name: Install cargo-edit
+        run: cargo install cargo-edit
+
+      - name: Bump patch version
+        run: |
+          cargo set-version --bump patch
+          cargo update
+
+      - name: Commit version bump
+        run: |
+          git config user.name "CI"
+          git config user.email "ci@codeberg.org"
+          git commit -am "chore: bump patch version [skip ci]"
+          git push
 
       - name: Publish to crates.io
         env:
